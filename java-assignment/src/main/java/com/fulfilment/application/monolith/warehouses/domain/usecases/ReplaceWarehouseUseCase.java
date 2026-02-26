@@ -13,16 +13,21 @@ import org.jboss.logging.Logger;
 /**
  * Use case: Replace an existing active Warehouse.
  *
- * <p>The replacement operation archives the current active warehouse and immediately creates the
- * new warehouse reusing the same Business Unit Code, preserving the unit's history.
+ * <p>
+ * The replacement operation archives the current active warehouse and
+ * immediately creates the
+ * new warehouse reusing the same Business Unit Code, preserving the unit's
+ * history.
  *
- * <p>Additional validations over creation:
+ * <p>
+ * Additional validations over creation:
  * <ol>
- *   <li>The warehouse to replace must exist and be active.</li>
- *   <li>New warehouse location must be valid.</li>
- *   <li>New warehouse capacity must be able to accommodate the stock of the old warehouse.</li>
- *   <li>New warehouse stock must match the stock of the old warehouse.</li>
- *   <li>New capacity must not exceed location's max capacity.</li>
+ * <li>The warehouse to replace must exist and be active.</li>
+ * <li>New warehouse location must be valid.</li>
+ * <li>New warehouse capacity must be able to accommodate the stock of the old
+ * warehouse.</li>
+ * <li>New warehouse stock must match the stock of the old warehouse.</li>
+ * <li>New capacity must not exceed location's max capacity.</li>
  * </ol>
  */
 @ApplicationScoped
@@ -32,10 +37,15 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
 
   private final WarehouseStore warehouseStore;
   private final LocationResolver locationResolver;
+  private final WarehouseValidator warehouseValidator;
 
-  public ReplaceWarehouseUseCase(WarehouseStore warehouseStore, LocationResolver locationResolver) {
+  public ReplaceWarehouseUseCase(
+      WarehouseStore warehouseStore,
+      LocationResolver locationResolver,
+      WarehouseValidator warehouseValidator) {
     this.warehouseStore = warehouseStore;
     this.locationResolver = locationResolver;
+    this.warehouseValidator = warehouseValidator;
   }
 
   @Override
@@ -46,36 +56,12 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
     Warehouse existing = warehouseStore.findByBusinessUnitCode(newWarehouse.businessUnitCode);
     if (existing == null) {
       throw new WarehouseValidationException(
-              "No active warehouse found with business unit code '" + newWarehouse.businessUnitCode + "'.");
+          "No active warehouse found with business unit code '"
+              + newWarehouse.businessUnitCode
+              + "'.");
     }
 
-    // 2. Location must be valid
-    Location location = locationResolver.resolveByIdentifier(newWarehouse.location);
-    if (location == null) {
-      throw new WarehouseValidationException(
-              "Location '" + newWarehouse.location + "' does not exist.");
-    }
-
-    // 3. New capacity must accommodate the old stock
-    if (existing.stock != null && newWarehouse.capacity < existing.stock) {
-      throw new WarehouseValidationException(
-              "New warehouse capacity " + newWarehouse.capacity
-                      + " cannot accommodate the existing stock of " + existing.stock + ".");
-    }
-
-    // 4. New stock must match the old warehouse stock
-    if (!newWarehouse.stock.equals(existing.stock)) {
-      throw new WarehouseValidationException(
-              "New warehouse stock " + newWarehouse.stock
-                      + " must match the current stock of the warehouse being replaced: " + existing.stock + ".");
-    }
-
-    // 5. Capacity must not exceed location maximum
-    if (newWarehouse.capacity > location.maxCapacity) {
-      throw new WarehouseValidationException(
-              "Requested capacity " + newWarehouse.capacity + " exceeds the maximum allowed capacity "
-                      + location.maxCapacity + " for location '" + newWarehouse.location + "'.");
-    }
+    warehouseValidator.validateReplacement(newWarehouse, existing, locationResolver);
 
     // Archive the old warehouse
     existing.archivedAt = LocalDateTime.now();

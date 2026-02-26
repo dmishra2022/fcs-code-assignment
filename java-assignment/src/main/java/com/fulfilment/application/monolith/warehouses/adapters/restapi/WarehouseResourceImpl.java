@@ -20,18 +20,24 @@ import org.jboss.logging.Logger;
 /**
  * REST adapter implementing the generated {@link WarehouseResource} interface.
  *
- * <p>Delegates all business logic to the use cases, keeping this class purely
- * concerned with HTTP protocol concerns (request/response translation, error mapping).
+ * <p>
+ * Delegates all business logic to the use cases, keeping this class purely
+ * concerned with HTTP protocol concerns (request/response translation, error
+ * mapping).
  */
 @RequestScoped
 public class WarehouseResourceImpl implements WarehouseResource {
 
   private static final Logger LOGGER = Logger.getLogger(WarehouseResourceImpl.class.getName());
 
-  @Inject private WarehouseRepository warehouseRepository;
-  @Inject private CreateWarehouseOperation createWarehouseOperation;
-  @Inject private ReplaceWarehouseOperation replaceWarehouseOperation;
-  @Inject private ArchiveWarehouseOperation archiveWarehouseOperation;
+  @Inject
+  private WarehouseRepository warehouseRepository;
+  @Inject
+  private CreateWarehouseOperation createWarehouseOperation;
+  @Inject
+  private ReplaceWarehouseOperation replaceWarehouseOperation;
+  @Inject
+  private ArchiveWarehouseOperation archiveWarehouseOperation;
 
   @Override
   public List<com.warehouse.api.beans.Warehouse> listAllWarehousesUnits() {
@@ -41,7 +47,7 @@ public class WarehouseResourceImpl implements WarehouseResource {
   @Override
   @Transactional
   public com.warehouse.api.beans.Warehouse createANewWarehouseUnit(
-          @NotNull com.warehouse.api.beans.Warehouse data) {
+      @NotNull com.warehouse.api.beans.Warehouse data) {
     LOGGER.infof("POST /warehouse - Creating warehouse: businessUnitCode=%s", data.getBusinessUnitCode());
 
     try {
@@ -61,9 +67,9 @@ public class WarehouseResourceImpl implements WarehouseResource {
   public com.warehouse.api.beans.Warehouse getAWarehouseUnitByID(String id) {
     LOGGER.infof("GET /warehouse/%s", id);
 
-    Warehouse warehouse = warehouseRepository.findByBusinessUnitCode(id);
+    Warehouse warehouse = warehouseRepository.findWarehouseById(Long.parseLong(id));
     if (warehouse == null) {
-      throw new NotFoundException("Warehouse with business unit code '" + id + "' not found.");
+      throw new NotFoundException("Warehouse with id '" + id + "' not found.");
     }
     return toApiWarehouse(warehouse);
   }
@@ -74,8 +80,10 @@ public class WarehouseResourceImpl implements WarehouseResource {
     LOGGER.infof("DELETE /warehouse/%s - Archiving warehouse", id);
 
     try {
-      Warehouse warehouse = new Warehouse();
-      warehouse.businessUnitCode = id;
+      Warehouse warehouse = warehouseRepository.findWarehouseById(Long.parseLong(id));
+      if (warehouse == null) {
+        throw new NotFoundException("Warehouse with id '" + id + "' not found.");
+      }
       archiveWarehouseOperation.archive(warehouse);
     } catch (WarehouseValidationException e) {
       LOGGER.warnf("Warehouse archive failed: %s", e.getMessage());
@@ -86,7 +94,7 @@ public class WarehouseResourceImpl implements WarehouseResource {
   @Override
   @Transactional
   public com.warehouse.api.beans.Warehouse replaceTheCurrentActiveWarehouse(
-          String businessUnitCode, @NotNull com.warehouse.api.beans.Warehouse data) {
+      String businessUnitCode, @NotNull com.warehouse.api.beans.Warehouse data) {
     LOGGER.infof("POST /warehouse/%s/replacement - Replacing warehouse", businessUnitCode);
 
     try {
@@ -99,18 +107,20 @@ public class WarehouseResourceImpl implements WarehouseResource {
     } catch (WarehouseValidationException e) {
       LOGGER.warnf("Warehouse replacement validation failed: %s", e.getMessage());
       throw new WebApplicationException(
-              e.getMessage(),
-              e.getMessage().contains("not found") || e.getMessage().contains("No active")
-                      ? Response.Status.NOT_FOUND
-                      : Response.Status.BAD_REQUEST);
+          e.getMessage(),
+          e.getMessage().contains("not found") || e.getMessage().contains("No active")
+              ? Response.Status.NOT_FOUND
+              : Response.Status.BAD_REQUEST);
     }
   }
 
   // ─── Mapping helpers ──────────────────────────────────────────────────────
 
   private com.warehouse.api.beans.Warehouse toApiWarehouse(Warehouse warehouse) {
-    if (warehouse == null) return null;
+    if (warehouse == null)
+      return null;
     var response = new com.warehouse.api.beans.Warehouse();
+    response.setId(warehouse.id != null ? warehouse.id.toString() : null);
     response.setBusinessUnitCode(warehouse.businessUnitCode);
     response.setLocation(warehouse.location);
     response.setCapacity(warehouse.capacity);

@@ -50,9 +50,8 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
   @Transactional
   public void update(Warehouse warehouse) {
     LOGGER.infof("Updating warehouse with businessUnitCode=%s", warehouse.businessUnitCode);
-    DbWarehouse dbWarehouse =
-        find("businessUnitCode = ?1 AND archivedAt IS NULL", warehouse.businessUnitCode)
-            .firstResult();
+    DbWarehouse dbWarehouse = find("businessUnitCode = ?1 AND archivedAt IS NULL", warehouse.businessUnitCode)
+        .firstResult();
     if (dbWarehouse == null) {
       throw new IllegalArgumentException(
           "Warehouse not found for update: " + warehouse.businessUnitCode);
@@ -67,9 +66,8 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
   @Transactional
   public void remove(Warehouse warehouse) {
     LOGGER.infof("Removing warehouse with businessUnitCode=%s", warehouse.businessUnitCode);
-    DbWarehouse dbWarehouse =
-        find("businessUnitCode = ?1 AND archivedAt IS NULL", warehouse.businessUnitCode)
-            .firstResult();
+    DbWarehouse dbWarehouse = find("businessUnitCode = ?1 AND archivedAt IS NULL", warehouse.businessUnitCode)
+        .firstResult();
     if (dbWarehouse != null) {
       delete(dbWarehouse);
     }
@@ -81,5 +79,10 @@ public class WarehouseRepository implements WarehouseStore, PanacheRepository<Db
         .firstResultOptional()
         .map(DbWarehouse::toWarehouse)
         .orElse(null);
+  }
+
+  @Override
+  public Warehouse findWarehouseById(Long id) {
+    return findByIdOptional(id).map(DbWarehouse::toWarehouse).orElse(null);
   }
 }
