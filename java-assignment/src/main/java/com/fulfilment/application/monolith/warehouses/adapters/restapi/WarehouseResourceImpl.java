@@ -69,16 +69,9 @@ public class WarehouseResourceImpl implements WarehouseResource {
   public com.warehouse.api.beans.Warehouse getAWarehouseUnitByID(String id) {
     LOGGER.infof("GET /warehouse/%s", id);
 
-    Warehouse warehouse = null;
-    try {
-      warehouse = warehouseRepository.findWarehouseById(Long.parseLong(id));
-    } catch (NumberFormatException e) {
-      // Fallback: treat id as businessUnitCode
-      warehouse = warehouseRepository.findByBusinessUnitCode(id);
-    }
-
+    Warehouse warehouse = warehouseRepository.findWarehouseById(parseId(id));
     if (warehouse == null) {
-      throw new NotFoundException("Warehouse with id or code '" + id + "' not found.");
+      throw new NotFoundException("Warehouse with id '" + id + "' not found.");
     }
     return toApiWarehouse(warehouse);
   }
@@ -88,16 +81,9 @@ public class WarehouseResourceImpl implements WarehouseResource {
   public void archiveAWarehouseUnitByID(String id) {
     LOGGER.infof("DELETE /warehouse/%s - Archiving warehouse", id);
 
-    Warehouse warehouse = null;
-    try {
-      warehouse = warehouseRepository.findWarehouseById(Long.parseLong(id));
-    } catch (NumberFormatException e) {
-      // Fallback: treat id as businessUnitCode
-      warehouse = warehouseRepository.findByBusinessUnitCode(id);
-    }
-
+    Warehouse warehouse = warehouseRepository.findWarehouseById(parseId(id));
     if (warehouse == null) {
-      throw new NotFoundException("Warehouse with id or code '" + id + "' not found.");
+      throw new NotFoundException("Warehouse with id '" + id + "' not found.");
     }
 
     try {
@@ -128,6 +114,14 @@ public class WarehouseResourceImpl implements WarehouseResource {
           e.getMessage().contains("not found") || e.getMessage().contains("No active")
               ? Response.Status.NOT_FOUND
               : Response.Status.BAD_REQUEST);
+    }
+  }
+
+  private Long parseId(String id) {
+    try {
+      return Long.parseLong(id);
+    } catch (NumberFormatException e) {
+      throw new NotFoundException("Warehouse with id '" + id + "' not found.");
     }
   }
 

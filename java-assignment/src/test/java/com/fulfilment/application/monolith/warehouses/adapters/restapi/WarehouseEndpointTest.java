@@ -30,10 +30,10 @@ class WarehouseEndpointTest {
 
   @Test
   @Order(2)
-  void testGetWarehouseByBusinessUnitCode() {
+  void testGetWarehouseById() {
     given()
         .when()
-        .get(BASE_PATH + "/MWH.001")
+        .get(BASE_PATH + "/1")
         .then()
         .statusCode(200)
         .body(containsString("MWH.001"), containsString("ZWOLLE-001"));
@@ -42,7 +42,7 @@ class WarehouseEndpointTest {
   @Test
   @Order(3)
   void testGetWarehouseNotFound_returns404() {
-    given().when().get(BASE_PATH + "/MWH.NONEXISTENT").then().statusCode(404);
+    given().when().get(BASE_PATH + "/999").then().statusCode(404);
   }
 
   @Test
@@ -104,8 +104,8 @@ class WarehouseEndpointTest {
             containsString("AMSTERDAM-001"),
             containsString("TILBURG-001"));
 
-    // Archive MWH.001:
-    given().when().delete(BASE_PATH + "/MWH.001").then().statusCode(204);
+    // Archive warehouse with id=1 (MWH.001):
+    given().when().delete(BASE_PATH + "/1").then().statusCode(204);
 
     // MWH.001 should no longer appear in active list:
     given()
