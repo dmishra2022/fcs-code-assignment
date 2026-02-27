@@ -32,15 +32,12 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
 
   private final WarehouseStore warehouseStore;
   private final LocationResolver locationResolver;
-  private final WarehouseValidator warehouseValidator;
 
   public CreateWarehouseUseCase(
       WarehouseStore warehouseStore,
-      LocationResolver locationResolver,
-      WarehouseValidator warehouseValidator) {
+      LocationResolver locationResolver) {
     this.warehouseStore = warehouseStore;
     this.locationResolver = locationResolver;
-    this.warehouseValidator = warehouseValidator;
   }
 
   @Override
@@ -49,7 +46,34 @@ public class CreateWarehouseUseCase implements CreateWarehouseOperation {
         "Creating warehouse: businessUnitCode=%s, location=%s",
         warehouse.businessUnitCode, warehouse.location);
 
-    warehouseValidator.validateCreation(warehouse, warehouseStore, locationResolver);
+    if (warehouseStore.findByBusinessUnitCode(warehouse.businessUnitCode) != null) {
+      throw new WarehouseValidationException(
+          "A warehouse with business unit code '" + warehouse.businessUnitCode + "' already exists.");
+    }
+
+    Location location = locationResolver.resolveByIdentifier(warehouse.location);
+    if (location == null) {
+      throw new WarehouseValidationException(
+          "Location '" + warehouse.location + "' does not exist.");
+    }
+
+    List<Warehouse> activeAtLocation = warehouseStore.findActiveByLocation(warehouse.location);
+    if (activeAtLocation.size() >= location.maxNumberOfWarehouses) {
+      throw new WarehouseValidationException(
+          "Location '" + warehouse.location + "' has reached the maximum number of warehouses ("
+              + location.maxNumberOfWarehouses + ").");
+    }
+
+    if (warehouse.capacity > location.maxCapacity) {
+      throw new WarehouseValidationException(
+          "Requested capacity " + warehouse.capacity + " exceeds the maximum allowed capacity "
+              + location.maxCapacity + " for location '" + warehouse.location + "'.");
+    }
+
+    if (warehouse.stock != null && warehouse.capacity != null && warehouse.stock > warehouse.capacity) {
+      throw new WarehouseValidationException(
+          "Stock " + warehouse.stock + " exceeds warehouse capacity " + warehouse.capacity + ".");
+    }
 
     warehouseStore.create(warehouse);
     LOGGER.infof("Warehouse '%s' created successfully.", warehouse.businessUnitCode);

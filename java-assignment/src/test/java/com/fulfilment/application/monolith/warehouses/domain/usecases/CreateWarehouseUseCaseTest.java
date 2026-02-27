@@ -21,8 +21,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @DisplayName("CreateWarehouseUseCase Tests")
 class CreateWarehouseUseCaseTest {
 
-    @Mock private WarehouseStore warehouseStore;
-    @Mock private LocationResolver locationResolver;
+    @Mock
+    private WarehouseStore warehouseStore;
+    @Mock
+    private LocationResolver locationResolver;
 
     private CreateWarehouseUseCase useCase;
 
@@ -39,9 +41,9 @@ class CreateWarehouseUseCaseTest {
         Warehouse warehouse = warehouseWithCode("MWH.NEW", "AMSTERDAM-001", 80, 20);
         Location location = new Location("AMSTERDAM-001", 5, 100);
 
-        when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
-        when(locationResolver.resolveByIdentifier("AMSTERDAM-001")).thenReturn(location);
-        when(warehouseStore.findActiveByLocation("AMSTERDAM-001")).thenReturn(Collections.emptyList());
+        lenient().when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
+        lenient().when(locationResolver.resolveByIdentifier("AMSTERDAM-001")).thenReturn(location);
+        lenient().when(warehouseStore.findActiveByLocation("AMSTERDAM-001")).thenReturn(Collections.emptyList());
 
         assertDoesNotThrow(() -> useCase.create(warehouse));
         verify(warehouseStore).create(warehouse);
@@ -55,10 +57,10 @@ class CreateWarehouseUseCaseTest {
         Warehouse existing = warehouseWithCode("MWH.001", "AMSTERDAM-001", 50, 10);
         Warehouse newWarehouse = warehouseWithCode("MWH.001", "TILBURG-001", 30, 5);
 
-        when(warehouseStore.findByBusinessUnitCode("MWH.001")).thenReturn(existing);
+        lenient().when(warehouseStore.findByBusinessUnitCode("MWH.001")).thenReturn(existing);
 
-        WarehouseValidationException ex =
-                assertThrows(WarehouseValidationException.class, () -> useCase.create(newWarehouse));
+        WarehouseValidationException ex = assertThrows(WarehouseValidationException.class,
+                () -> useCase.create(newWarehouse));
         assertTrue(ex.getMessage().contains("already exists"));
         verify(warehouseStore, never()).create(any());
     }
@@ -70,11 +72,11 @@ class CreateWarehouseUseCaseTest {
     void create_unknownLocation_throwsValidationException() {
         Warehouse warehouse = warehouseWithCode("MWH.NEW", "NONEXISTENT-001", 30, 5);
 
-        when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
-        when(locationResolver.resolveByIdentifier("NONEXISTENT-001")).thenReturn(null);
+        lenient().when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
+        lenient().when(locationResolver.resolveByIdentifier("NONEXISTENT-001")).thenReturn(null);
 
-        WarehouseValidationException ex =
-                assertThrows(WarehouseValidationException.class, () -> useCase.create(warehouse));
+        WarehouseValidationException ex = assertThrows(WarehouseValidationException.class,
+                () -> useCase.create(warehouse));
         assertTrue(ex.getMessage().contains("does not exist"));
         verify(warehouseStore, never()).create(any());
     }
@@ -88,12 +90,12 @@ class CreateWarehouseUseCaseTest {
         Location location = new Location("ZWOLLE-001", 1, 40);
         Warehouse existingAtLocation = warehouseWithCode("MWH.001", "ZWOLLE-001", 30, 10);
 
-        when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
-        when(locationResolver.resolveByIdentifier("ZWOLLE-001")).thenReturn(location);
-        when(warehouseStore.findActiveByLocation("ZWOLLE-001")).thenReturn(List.of(existingAtLocation));
+        lenient().when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
+        lenient().when(locationResolver.resolveByIdentifier("ZWOLLE-001")).thenReturn(location);
+        lenient().when(warehouseStore.findActiveByLocation("ZWOLLE-001")).thenReturn(List.of(existingAtLocation));
 
-        WarehouseValidationException ex =
-                assertThrows(WarehouseValidationException.class, () -> useCase.create(warehouse));
+        WarehouseValidationException ex = assertThrows(WarehouseValidationException.class,
+                () -> useCase.create(warehouse));
         assertTrue(ex.getMessage().contains("maximum number of warehouses"));
         verify(warehouseStore, never()).create(any());
     }
@@ -106,12 +108,12 @@ class CreateWarehouseUseCaseTest {
         Warehouse warehouse = warehouseWithCode("MWH.NEW", "ZWOLLE-001", 50, 5); // max is 40
         Location location = new Location("ZWOLLE-001", 1, 40);
 
-        when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
-        when(locationResolver.resolveByIdentifier("ZWOLLE-001")).thenReturn(location);
-        when(warehouseStore.findActiveByLocation("ZWOLLE-001")).thenReturn(Collections.emptyList());
+        lenient().when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
+        lenient().when(locationResolver.resolveByIdentifier("ZWOLLE-001")).thenReturn(location);
+        lenient().when(warehouseStore.findActiveByLocation("ZWOLLE-001")).thenReturn(Collections.emptyList());
 
-        WarehouseValidationException ex =
-                assertThrows(WarehouseValidationException.class, () -> useCase.create(warehouse));
+        WarehouseValidationException ex = assertThrows(WarehouseValidationException.class,
+                () -> useCase.create(warehouse));
         assertTrue(ex.getMessage().contains("exceeds the maximum allowed capacity"));
         verify(warehouseStore, never()).create(any());
     }
@@ -122,9 +124,9 @@ class CreateWarehouseUseCaseTest {
         Warehouse warehouse = warehouseWithCode("MWH.NEW", "ZWOLLE-001", 40, 5);
         Location location = new Location("ZWOLLE-001", 1, 40);
 
-        when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
-        when(locationResolver.resolveByIdentifier("ZWOLLE-001")).thenReturn(location);
-        when(warehouseStore.findActiveByLocation("ZWOLLE-001")).thenReturn(Collections.emptyList());
+        lenient().when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
+        lenient().when(locationResolver.resolveByIdentifier("ZWOLLE-001")).thenReturn(location);
+        lenient().when(warehouseStore.findActiveByLocation("ZWOLLE-001")).thenReturn(Collections.emptyList());
 
         assertDoesNotThrow(() -> useCase.create(warehouse));
         verify(warehouseStore).create(warehouse);
@@ -138,12 +140,12 @@ class CreateWarehouseUseCaseTest {
         Warehouse warehouse = warehouseWithCode("MWH.NEW", "AMSTERDAM-001", 30, 40); // stock > capacity
         Location location = new Location("AMSTERDAM-001", 5, 100);
 
-        when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
-        when(locationResolver.resolveByIdentifier("AMSTERDAM-001")).thenReturn(location);
-        when(warehouseStore.findActiveByLocation("AMSTERDAM-001")).thenReturn(Collections.emptyList());
+        lenient().when(warehouseStore.findByBusinessUnitCode("MWH.NEW")).thenReturn(null);
+        lenient().when(locationResolver.resolveByIdentifier("AMSTERDAM-001")).thenReturn(location);
+        lenient().when(warehouseStore.findActiveByLocation("AMSTERDAM-001")).thenReturn(Collections.emptyList());
 
-        WarehouseValidationException ex =
-                assertThrows(WarehouseValidationException.class, () -> useCase.create(warehouse));
+        WarehouseValidationException ex = assertThrows(WarehouseValidationException.class,
+                () -> useCase.create(warehouse));
         assertTrue(ex.getMessage().contains("Stock"));
         verify(warehouseStore, never()).create(any());
     }

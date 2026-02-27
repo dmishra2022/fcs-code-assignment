@@ -67,9 +67,16 @@ public class WarehouseResourceImpl implements WarehouseResource {
   public com.warehouse.api.beans.Warehouse getAWarehouseUnitByID(String id) {
     LOGGER.infof("GET /warehouse/%s", id);
 
-    Warehouse warehouse = warehouseRepository.findWarehouseById(Long.parseLong(id));
+    Warehouse warehouse = null;
+    try {
+      warehouse = warehouseRepository.findWarehouseById(Long.parseLong(id));
+    } catch (NumberFormatException e) {
+      // Fallback: treat id as businessUnitCode
+      warehouse = warehouseRepository.findByBusinessUnitCode(id);
+    }
+
     if (warehouse == null) {
-      throw new NotFoundException("Warehouse with id '" + id + "' not found.");
+      throw new NotFoundException("Warehouse with id or code '" + id + "' not found.");
     }
     return toApiWarehouse(warehouse);
   }
@@ -79,15 +86,23 @@ public class WarehouseResourceImpl implements WarehouseResource {
   public void archiveAWarehouseUnitByID(String id) {
     LOGGER.infof("DELETE /warehouse/%s - Archiving warehouse", id);
 
+    Warehouse warehouse = null;
     try {
-      Warehouse warehouse = warehouseRepository.findWarehouseById(Long.parseLong(id));
-      if (warehouse == null) {
-        throw new NotFoundException("Warehouse with id '" + id + "' not found.");
-      }
+      warehouse = warehouseRepository.findWarehouseById(Long.parseLong(id));
+    } catch (NumberFormatException e) {
+      // Fallback: treat id as businessUnitCode
+      warehouse = warehouseRepository.findByBusinessUnitCode(id);
+    }
+
+    if (warehouse == null) {
+      throw new NotFoundException("Warehouse with id or code '" + id + "' not found.");
+    }
+
+    try {
       archiveWarehouseOperation.archive(warehouse);
     } catch (WarehouseValidationException e) {
       LOGGER.warnf("Warehouse archive failed: %s", e.getMessage());
-      throw new WebApplicationException(e.getMessage(), Response.Status.NOT_FOUND);
+      throw new WebApplicationException(e.getMessage(), Response.Status.BAD_REQUEST);
     }
   }
 

@@ -37,15 +37,12 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
 
   private final WarehouseStore warehouseStore;
   private final LocationResolver locationResolver;
-  private final WarehouseValidator warehouseValidator;
 
   public ReplaceWarehouseUseCase(
       WarehouseStore warehouseStore,
-      LocationResolver locationResolver,
-      WarehouseValidator warehouseValidator) {
+      LocationResolver locationResolver) {
     this.warehouseStore = warehouseStore;
     this.locationResolver = locationResolver;
-    this.warehouseValidator = warehouseValidator;
   }
 
   @Override
@@ -61,7 +58,29 @@ public class ReplaceWarehouseUseCase implements ReplaceWarehouseOperation {
               + "'.");
     }
 
-    warehouseValidator.validateReplacement(newWarehouse, existing, locationResolver);
+    Location location = locationResolver.resolveByIdentifier(newWarehouse.location);
+    if (location == null) {
+      throw new WarehouseValidationException(
+          "Location '" + newWarehouse.location + "' does not exist.");
+    }
+
+    if (newWarehouse.capacity > location.maxCapacity) {
+      throw new WarehouseValidationException(
+          "Requested capacity " + newWarehouse.capacity + " exceeds the maximum allowed capacity "
+              + location.maxCapacity + " for location '" + newWarehouse.location + "'.");
+    }
+
+    if (existing.stock != null && newWarehouse.capacity < existing.stock) {
+      throw new WarehouseValidationException(
+          "New warehouse capacity " + newWarehouse.capacity
+              + " cannot accommodate the existing stock of " + existing.stock + ".");
+    }
+
+    if (newWarehouse.stock != null && !newWarehouse.stock.equals(existing.stock)) {
+      throw new WarehouseValidationException(
+          "New warehouse stock " + newWarehouse.stock
+              + " must match the current stock of the warehouse being replaced: " + existing.stock + ".");
+    }
 
     // Archive the old warehouse
     existing.archivedAt = LocalDateTime.now();

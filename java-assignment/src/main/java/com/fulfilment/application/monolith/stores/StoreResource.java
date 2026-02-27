@@ -25,10 +25,15 @@ import org.jboss.logging.Logger;
 /**
  * REST resource for {@link Store} entities.
  *
- * <p>The legacy system synchronisation is performed via a CDI {@link Event} observed in
- * {@link StoreEventObserver} with {@code TransactionPhase.AFTER_SUCCESS}. This guarantees the
- * legacy system is notified only once the database transaction has been durably committed,
- * preventing phantom records from rolled-back writes ever reaching the downstream system.
+ * <p>
+ * The legacy system synchronisation is performed via a CDI {@link Event}
+ * observed in
+ * {@link StoreEventObserver} with {@code TransactionPhase.AFTER_SUCCESS}. This
+ * guarantees the
+ * legacy system is notified only once the database transaction has been durably
+ * committed,
+ * preventing phantom records from rolled-back writes ever reaching the
+ * downstream system.
  */
 @Path("store")
 @ApplicationScoped
@@ -38,7 +43,8 @@ public class StoreResource {
 
   private static final Logger LOGGER = Logger.getLogger(StoreResource.class.getName());
 
-  @Inject Event<StoreEvent> storeEvent;
+  @Inject
+  Event<StoreEvent> storeEvent;
 
   @GET
   public List<Store> get() {
@@ -119,6 +125,17 @@ public class StoreResource {
     return entity;
   }
 
+  @jakarta.inject.Inject
+  com.fulfilment.application.monolith.fulfilment.FulfilmentService fulfilmentService;
+
+  @POST
+  @Path("{id}/fulfilment/{warehouseId}")
+  @Transactional
+  public Response associateWarehouse(Long id, Long warehouseId) {
+    fulfilmentService.associateStoreWithWarehouse(id, warehouseId);
+    return Response.status(204).build();
+  }
+
   @DELETE
   @Path("{id}")
   @Transactional
@@ -134,7 +151,8 @@ public class StoreResource {
   @Provider
   public static class ErrorMapper implements ExceptionMapper<Exception> {
 
-    @Inject ObjectMapper objectMapper;
+    @Inject
+    ObjectMapper objectMapper;
 
     @Override
     public Response toResponse(Exception exception) {

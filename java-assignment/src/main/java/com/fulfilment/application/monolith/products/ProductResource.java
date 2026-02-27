@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import com.fulfilment.application.monolith.fulfilment.FulfilmentService;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -26,7 +27,8 @@ import org.jboss.logging.Logger;
 @Consumes("application/json")
 public class ProductResource {
 
-  @Inject ProductRepository productRepository;
+  @Inject
+  ProductRepository productRepository;
 
   private static final Logger LOGGER = Logger.getLogger(ProductResource.class.getName());
 
@@ -80,6 +82,17 @@ public class ProductResource {
     return entity;
   }
 
+  @Inject
+  FulfilmentService fulfilmentService;
+
+  @POST
+  @Path("{id}/fulfilment/{warehouseId}")
+  @Transactional
+  public Response associateWarehouse(Long id, Long warehouseId) {
+    fulfilmentService.associateProductWithWarehouse(id, warehouseId);
+    return Response.status(204).build();
+  }
+
   @DELETE
   @Path("{id}")
   @Transactional
@@ -95,7 +108,8 @@ public class ProductResource {
   @Provider
   public static class ErrorMapper implements ExceptionMapper<Exception> {
 
-    @Inject ObjectMapper objectMapper;
+    @Inject
+    ObjectMapper objectMapper;
 
     @Override
     public Response toResponse(Exception exception) {

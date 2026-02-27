@@ -11,7 +11,14 @@ import java.math.BigDecimal;
 @Cacheable
 public class Product {
 
-  @Id @GeneratedValue public Long id;
+  @Id
+  @GeneratedValue
+  public Long id;
+
+  @jakarta.persistence.ManyToMany
+  @jakarta.persistence.JoinTable(name = "product_warehouse", joinColumns = @jakarta.persistence.JoinColumn(name = "product_id"), inverseJoinColumns = @jakarta.persistence.JoinColumn(name = "warehouse_id"))
+  @com.fasterxml.jackson.annotation.JsonIgnore
+  public java.util.List<com.fulfilment.application.monolith.warehouses.adapters.database.DbWarehouse> fulfilmentUnits = new java.util.ArrayList<>();
 
   @Column(length = 40, unique = true)
   public String name;
@@ -24,7 +31,8 @@ public class Product {
 
   public int stock;
 
-  public Product() {}
+  public Product() {
+  }
 
   public Product(String name) {
     this.name = name;
