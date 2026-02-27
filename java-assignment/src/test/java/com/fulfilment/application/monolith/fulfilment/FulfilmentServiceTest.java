@@ -1,6 +1,7 @@
 package com.fulfilment.application.monolith.fulfilment;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.fulfilment.application.monolith.products.Product;
@@ -8,8 +9,11 @@ import com.fulfilment.application.monolith.products.ProductRepository;
 import com.fulfilment.application.monolith.warehouses.adapters.database.DbWarehouse;
 import com.fulfilment.application.monolith.warehouses.adapters.database.WarehouseRepository;
 import com.fulfilment.application.monolith.warehouses.domain.exceptions.WarehouseValidationException;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +29,11 @@ class FulfilmentServiceTest {
     private ProductRepository productRepository;
     @Mock
     private WarehouseRepository warehouseRepository;
+    @Mock
+    private EntityManager entityManager;
+    @SuppressWarnings("unchecked")
+    @Mock
+    private TypedQuery<Object> typedQuery;
 
     private FulfilmentService service;
 
@@ -32,16 +41,25 @@ class FulfilmentServiceTest {
     void setUp() {
         service = new FulfilmentService();
         try {
-            var prodField = FulfilmentService.class.getDeclaredField("productRepository");
-            prodField.setAccessible(true);
-            prodField.set(service, productRepository);
-
-            var whField = FulfilmentService.class.getDeclaredField("warehouseRepository");
-            whField.setAccessible(true);
-            whField.set(service, warehouseRepository);
+            for (var entry : new Object[][] {
+                    { "productRepository", productRepository },
+                    { "warehouseRepository", warehouseRepository },
+                    { "entityManager", entityManager }
+            }) {
+                var field = FulfilmentService.class.getDeclaredField((String) entry[0]);
+                field.setAccessible(true);
+                field.set(service, entry[1]);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void stubStoreQuery() {
+        lenient().when(entityManager.createQuery(anyString(), any(Class.class))).thenReturn(typedQuery);
+        lenient().when(typedQuery.setParameter(anyString(), any())).thenReturn(typedQuery);
+        lenient().when(typedQuery.getResultList()).thenReturn(Collections.emptyList());
     }
 
     @Test
@@ -56,6 +74,8 @@ class FulfilmentServiceTest {
 
         when(productRepository.findById(1L)).thenReturn(product);
         when(warehouseRepository.findById(10L)).thenReturn(warehouse);
+        when(productRepository.countByWarehouseId(10L)).thenReturn(0L);
+        stubStoreQuery();
 
         assertDoesNotThrow(() -> service.associateProductWithWarehouse(1L, 10L));
 
@@ -122,5 +142,24 @@ class FulfilmentServiceTest {
         WarehouseValidationException ex = assertThrows(WarehouseValidationException.class,
                 () -> service.associateProductWithWarehouse(1L, 10L));
         assertTrue(ex.getMessage().contains("archived"));
+    }
+
+    @Test
+    @DisplayName("associateProductWithWarehouse throws when warehouse has max products")
+    void associate_maxProductsPerWarehouse_throwsValidationException() {
+        Product product = new Product("Widget");
+        product.id = 1L;
+        product.fulfilmentUnits = new ArrayList<>();
+
+        DbWarehouse warehouse = new DbWarehouse();
+        warehouse.id = 10L;
+
+        when(productRepository.findById(1L)).thenReturn(product);
+        when(warehouseRepository.findById(10L)).thenReturn(warehouse);
+        when(productRepository.countByWarehouseId(10L)).thenReturn(5L);
+
+        WarehouseValidationException ex = assertThrows(WarehouseValidationException.class,
+                () -> service.associateProductWithWarehouse(1L, 10L));
+        assertTrue(ex.getMessage().contains("maximum of 5"));
     }
 }

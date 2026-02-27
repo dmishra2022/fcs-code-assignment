@@ -28,6 +28,7 @@ public class StoreEventObserver {
     switch (event.getType()) {
       case CREATED -> legacyStoreManagerGateway.createStoreOnLegacySystem(event.getStore());
       case UPDATED -> legacyStoreManagerGateway.updateStoreOnLegacySystem(event.getStore());
+      case DELETED -> legacyStoreManagerGateway.deleteStoreOnLegacySystem(event.getStore());
     }
   }
 }

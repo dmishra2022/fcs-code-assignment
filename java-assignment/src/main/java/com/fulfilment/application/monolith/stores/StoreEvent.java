@@ -8,7 +8,8 @@ public class StoreEvent {
 
   public enum Type {
     CREATED,
-    UPDATED
+    UPDATED,
+    DELETED
   }
 
   private final Store store;

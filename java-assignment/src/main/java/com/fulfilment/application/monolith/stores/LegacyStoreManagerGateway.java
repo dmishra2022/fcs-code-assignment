@@ -17,6 +17,10 @@ public class LegacyStoreManagerGateway {
     writeToFile(store);
   }
 
+  public void deleteStoreOnLegacySystem(Store store) {
+    writeToFile(store);
+  }
+
   private void writeToFile(Store store) {
     try {
       // Step 1: Create a temporary file

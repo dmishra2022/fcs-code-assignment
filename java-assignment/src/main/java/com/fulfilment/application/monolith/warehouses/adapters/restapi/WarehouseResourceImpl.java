@@ -16,6 +16,7 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.ResponseStatus;
 
 /**
  * REST adapter implementing the generated {@link WarehouseResource} interface.
@@ -46,6 +47,7 @@ public class WarehouseResourceImpl implements WarehouseResource {
 
   @Override
   @Transactional
+  @ResponseStatus(201)
   public com.warehouse.api.beans.Warehouse createANewWarehouseUnit(
       @NotNull com.warehouse.api.beans.Warehouse data) {
     LOGGER.infof("POST /warehouse - Creating warehouse: businessUnitCode=%s", data.getBusinessUnitCode());

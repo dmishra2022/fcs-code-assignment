@@ -53,4 +53,17 @@ class StoreEventObserverTest {
     verify(legacyGateway).updateStoreOnLegacySystem(store);
     verify(legacyGateway, never()).createStoreOnLegacySystem(any());
   }
+
+  @Test
+  @DisplayName("DELETED event invokes deleteStoreOnLegacySystem")
+  void onStoreCreated_deletedEvent_invokesDelete() {
+    Store store = new Store("TEST-STORE");
+    StoreEvent event = new StoreEvent(store, StoreEvent.Type.DELETED);
+
+    observer.onStoreCreated(event);
+
+    verify(legacyGateway).deleteStoreOnLegacySystem(store);
+    verify(legacyGateway, never()).createStoreOnLegacySystem(any());
+    verify(legacyGateway, never()).updateStoreOnLegacySystem(any());
+  }
 }

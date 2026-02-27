@@ -144,6 +144,7 @@ public class StoreResource {
     if (entity == null) {
       throw new WebApplicationException("Store with id of " + id + " does not exist.", 404);
     }
+    storeEvent.fire(new StoreEvent(entity, StoreEvent.Type.DELETED));
     entity.delete();
     return Response.status(204).build();
   }
